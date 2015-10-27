@@ -322,12 +322,12 @@ public class TaskSingleReobf extends DefaultTask implements IReobfuscator
 
     public void useSrgSrg()
     {
-        setMappings(Constants.SRG_MCP_TO_SRG);
+        setMappings(ReobfTaskFactory.srgSrg);
     }
 
     public void useNotchSrg()
     {
-        setMappings(Constants.SRG_MCP_TO_NOTCH);
+        setMappings(ReobfTaskFactory.notchSrg);
     }
 
     @Override

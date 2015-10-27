@@ -135,6 +135,9 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
         project.getConfigurations().maybeCreate(CONFIG_DC_RESOLVED);
         project.getConfigurations().maybeCreate(CONFIG_DP_RESOLVED);
 
+        // save the delayed srg files to the factory
+        ReobfTaskFactory.srgSrg = delayedFile(SRG_MCP_TO_SRG);
+        ReobfTaskFactory.notchSrg = delayedFile(SRG_MCP_TO_NOTCH);
         // create the reobf named container and add the jar task to it.
         NamedDomainObjectContainer<?> reobf = project.container(IReobfuscator.class, new ReobfTaskFactory(this));
         reobf.create("jar");
@@ -358,6 +361,7 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
 
             recompile.dependsOn(remap, TASK_DL_VERSION_JSON);
         }
+
 
         // create GradleStart
         final CreateStartTask makeStart = makeTask(TASK_MAKE_START, CreateStartTask.class);

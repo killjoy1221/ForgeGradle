@@ -30,9 +30,13 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.bundling.Jar;
 
 import net.minecraftforge.gradle.util.GradleConfigurationException;
+import net.minecraftforge.gradle.util.delayed.DelayedFile;
 
 public class ReobfTaskFactory implements NamedDomainObjectFactory<IReobfuscator>
 {
+    public static DelayedFile srgSrg;
+    public static DelayedFile notchSrg;
+
     private final UserBasePlugin<?> plugin;
 
     public ReobfTaskFactory(UserBasePlugin<?> plugin)
