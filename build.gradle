@@ -10,6 +10,10 @@ buildscript {
     }
 }
 
+plugins {
+    id 'org.ajoberstar.grgit' version '1.7.2'
+}
+
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
@@ -23,6 +27,8 @@ version = '2.3-SNAPSHOT'
 archivesBaseName = 'ForgeGradle'
 targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
+
+ext.githash = grgit.head().abbreviatedId
 
 repositories {
     mavenLocal()
@@ -136,7 +142,7 @@ jar {
         attributes 'version':project.version
         attributes 'javaCompliance': project.targetCompatibility
         attributes 'group':project.group
-        attributes 'Implementation-Version': project.version + getGitHash()
+        attributes 'Implementation-Version': project.version + project.githash
     }
 }
 
@@ -283,9 +289,3 @@ uploadArchives {
 // write out version so its convenient for doc deployment
 file('build').mkdirs()
 file('build/version.txt').text = version;
-
-def getGitHash() {
-    def process = 'git rev-parse --short HEAD'.execute()
-    process.waitFor()
-    return '-' + (process.exitValue() ? 'unknown' : process.text.trim())
-}
