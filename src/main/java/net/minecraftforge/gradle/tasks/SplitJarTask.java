@@ -24,6 +24,7 @@ import groovy.lang.Closure;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -111,7 +112,7 @@ public class SplitJarTask extends CachedTask implements PatternFilterable
                     }
                     catch (IOException e)
                     {
-                        Throwables.propagate(e);
+                        throw new RuntimeException(e);
                     }
                 }
             });

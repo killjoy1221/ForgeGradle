@@ -208,8 +208,7 @@ public class CreateStartTask extends CachedTask
         }
         catch (Exception e)
         {
-            Throwables.propagate(e);
-            return "";
+            throw new RuntimeException(e);
         }
     }
 

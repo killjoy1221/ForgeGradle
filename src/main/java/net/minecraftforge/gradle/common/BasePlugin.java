@@ -448,7 +448,7 @@ public abstract class BasePlugin<K extends BaseExtension> implements Plugin<Proj
                     }
                     catch (Throwable t)
                     {
-                        Throwables.propagate(t);
+                        throw new RuntimeException(t);
                     }
                     return true;
                 }
@@ -772,7 +772,7 @@ public abstract class BasePlugin<K extends BaseExtension> implements Plugin<Proj
             }
             catch (IOException e)
             {
-                Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         }
 
@@ -804,7 +804,7 @@ public abstract class BasePlugin<K extends BaseExtension> implements Plugin<Proj
             catch (Exception e)
             {
                 LOGGER.error("" + file + " could not be parsed");
-                Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         }
 

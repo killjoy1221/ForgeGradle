@@ -132,7 +132,7 @@ class TaskExtractExcModifiers extends DefaultTask
             }
             catch (IOException e)
             {
-                Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
             return super.visitMethod(access, name, desc, signature, exceptions);
         }

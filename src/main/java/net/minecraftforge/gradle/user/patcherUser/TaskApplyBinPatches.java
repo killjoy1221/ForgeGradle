@@ -168,7 +168,7 @@ public class TaskApplyBinPatches extends CachedTask
                     }
                     catch (IOException e)
                     {
-                        throw Throwables.propagate(e);
+                        throw new RuntimeException(e);
                     }
                 }
 
@@ -199,7 +199,7 @@ public class TaskApplyBinPatches extends CachedTask
         }
         catch (Exception e)
         {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
 
         log("Reading Patches:");
@@ -223,7 +223,7 @@ public class TaskApplyBinPatches extends CachedTask
         }
         catch (IOException e)
         {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         log("Read %d binary patches", patchlist.size());
         log("Patch list :\n\t%s", Joiner.on("\n\t").join(patchlist.entrySet()));

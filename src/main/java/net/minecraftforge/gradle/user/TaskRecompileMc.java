@@ -191,7 +191,7 @@ public class TaskRecompileMc extends CachedTask
             }
             catch (IOException e)
             {
-                Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         }
 
@@ -212,7 +212,7 @@ public class TaskRecompileMc extends CachedTask
             }
             catch (IOException e)
             {
-                Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         }
     }

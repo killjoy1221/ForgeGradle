@@ -41,14 +41,14 @@ import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
-//import org.gradle.api.tasks.ParallelizableTask;
 
 import com.cloudbees.diff.PatchException;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+
+//import org.gradle.api.tasks.ParallelizableTask;
 
 //@ParallelizableTask
 public class PatchSourcesTask extends AbstractEditJarTask
@@ -293,7 +293,7 @@ public class PatchSourcesTask extends AbstractEditJarTask
 
         if (failure != null && failOnError)
         {
-            Throwables.propagate(failure);
+            throw new RuntimeException(failure);
         }
 
         if (fuzzed)

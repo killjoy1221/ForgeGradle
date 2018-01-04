@@ -287,10 +287,9 @@ public class ApplyS2STask extends DefaultTask
         }
         catch (IOException e)
         {
-            Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
 
-        return null;
     }
 
     @InputFiles @SkipWhenEmpty
