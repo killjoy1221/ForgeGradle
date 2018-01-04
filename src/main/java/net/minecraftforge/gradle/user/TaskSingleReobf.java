@@ -36,7 +36,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.tasks.ParallelizableTask;
+//import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import com.google.common.base.Charsets;
@@ -94,7 +94,7 @@ import net.minecraftforge.gradle.util.mcp.ReobfExceptor;
  * </pre>
  *
  */
-@ParallelizableTask
+//@ParallelizableTask
 public class TaskSingleReobf extends DefaultTask
 {
     private Object                 jar;

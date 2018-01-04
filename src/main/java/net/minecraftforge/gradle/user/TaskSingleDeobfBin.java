@@ -36,7 +36,7 @@ import net.minecraftforge.gradle.util.caching.CachedTask;
 
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
-import org.gradle.api.tasks.ParallelizableTask;
+//import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -48,7 +48,7 @@ import au.com.bytecode.opencsv.CSVReader;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 
-@ParallelizableTask
+//@ParallelizableTask
 public class TaskSingleDeobfBin extends CachedTask
 {
     @InputFile

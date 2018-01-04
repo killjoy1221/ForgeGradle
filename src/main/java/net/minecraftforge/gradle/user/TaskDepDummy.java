@@ -26,10 +26,10 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import org.gradle.api.DefaultTask;
-import org.gradle.api.tasks.ParallelizableTask;
+//import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
-@ParallelizableTask
+//@ParallelizableTask
 public class TaskDepDummy extends DefaultTask
 {
     private Object outputFile;
