@@ -53,10 +53,6 @@ public class FileLogListenner implements StandardOutputListener, BuildListener
             
             writer = Files.newWriter(out, Charset.defaultCharset());
         }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();

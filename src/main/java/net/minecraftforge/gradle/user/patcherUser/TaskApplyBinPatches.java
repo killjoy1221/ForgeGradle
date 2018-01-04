@@ -85,7 +85,7 @@ public class TaskApplyBinPatches extends CachedTask
             getOutJar().delete();
         }
 
-        final HashSet<String> entries = new HashSet<String>();
+        final HashSet<String> entries = new HashSet<>();
 
         try (ZipFile in = new ZipFile(getInJar());
              ZipInputStream classesIn = new ZipInputStream(new FileInputStream(getClassJar()));

@@ -82,7 +82,7 @@ public class JsonFactory
 
                 if (parentFile.exists())
                 {
-                    List<File> dirs = new ArrayList<File>(inheritanceDirs.length-1);
+                    List<File> dirs = new ArrayList<>(inheritanceDirs.length - 1);
                     for (File toAdd : inheritanceDirs)
                     {
                         if (toAdd != inheritDir)
@@ -114,7 +114,7 @@ public class JsonFactory
 
                 if (parentFile.exists())
                 {
-                    List<File> dirs = new ArrayList<File>(inheritanceDirs.length-1);
+                    List<File> dirs = new ArrayList<>(inheritanceDirs.length - 1);
                     for (File toAdd : inheritanceDirs)
                     {
                         if (toAdd != inheritDir)
@@ -156,7 +156,7 @@ public class JsonFactory
     public static Map<String, MCInjectorStruct> loadMCIJson(File json) throws IOException
     {
         FileReader reader = new FileReader(json);
-        Map<String, MCInjectorStruct> ret = new LinkedHashMap<String, MCInjectorStruct>();
+        Map<String, MCInjectorStruct> ret = new LinkedHashMap<>();
 
         JsonObject object = (JsonObject) new JsonParser().parse(reader);
         reader.close();

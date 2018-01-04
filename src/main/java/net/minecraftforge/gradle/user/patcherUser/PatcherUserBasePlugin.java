@@ -77,15 +77,8 @@ public abstract class PatcherUserBasePlugin<T extends UserBaseExtension> extends
             extractUserdev.exclude("META-INF/**", "META-INF/**");
             extractUserdev.dependsOn(TASK_DL_VERSION_JSON);
 
-            extractUserdev.doLast(new Closure<Boolean>(PatcherUserBasePlugin.class) // normalizes to linux endings
-            {
-                @Override
-                public Boolean call()
-                {
-                    parseAndStoreVersion(delayedFile(JSON_USERDEV).call(), delayedFile(DIR_JSONS).call());
-                    return true;
-                }
-            });
+            // normalizes to linux endings
+            extractUserdev.doLast(task -> parseAndStoreVersion(delayedFile(JSON_USERDEV).call(), delayedFile(DIR_JSONS).call()));
 
             // See afterEvaluate for more config
 
@@ -189,13 +182,7 @@ public abstract class PatcherUserBasePlugin<T extends UserBaseExtension> extends
     protected void afterDecomp(final boolean isDecomp, final boolean useLocalCache, final String mcConfig)
     {
         // add MC repo to all projects
-        project.allprojects(new Action<Project>() {
-            @Override
-            public void execute(Project proj)
-            {
-                addFlatRepo(proj, "TweakerMcRepo", delayedFile(useLocalCache ? DIR_LOCAL_CACHE : DIR_API_JAR_BASE).call());
-            }
-        });
+        project.allprojects(proj -> addFlatRepo(proj, "TweakerMcRepo", delayedFile(useLocalCache ? DIR_LOCAL_CACHE : DIR_API_JAR_BASE).call()));
 
         // add the Mc dep
         T exten = getExtension();

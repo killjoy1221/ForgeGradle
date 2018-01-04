@@ -293,16 +293,18 @@ public class ReobfExceptor
         public boolean processLine(String line) throws IOException
         {
             String[] split = line.split(" ");
-            if (split[0].equals("CL:"))
+            switch (split[0])
             {
+            case "CL:":
                 split[2] = rename(split[2]);
-            }
-            else if (split[0].equals("FD:"))
+                break;
+            case "FD:":
             {
                 String[] s = rsplit(split[2], "/");
                 split[2] = rename(s[0]) + "/" + s[1];
+                break;
             }
-            else if (split[0].equals("MD:"))
+            case "MD:":
             {
                 String[] s = rsplit(split[3], "/");
                 split[3] = rename(s[0]) + "/" + s[1];
@@ -314,12 +316,14 @@ public class ReobfExceptor
 
                 Matcher m = reg.matcher(split[4]);
                 StringBuffer b = new StringBuffer();
-                while(m.find())
+                while (m.find())
                 {
-                    m.appendReplacement(b, "L" + rename(m.group(1)).replace("$",  "\\$") + ";");
+                    m.appendReplacement(b, "L" + rename(m.group(1)).replace("$", "\\$") + ";");
                 }
                 m.appendTail(b);
                 split[4] = b.toString();
+                break;
+            }
             }
             out.append(StringUtil.joinString(Arrays.asList(split), " ")).append('\n');
             return true;
@@ -411,7 +415,7 @@ public class ReobfExceptor
         public String name;
         public String desc;
         public int access;
-        public List<Insn> insns = new ArrayList<Insn>();
+        public List<Insn> insns = new ArrayList<>();
         private String cache = null;
         
         public AccessInfo(String owner, String name, String desc)

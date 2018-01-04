@@ -58,13 +58,7 @@ public class TaskExtractDepAts extends DefaultTask
         outputDir.mkdirs(); // make sur eit exists
         
         // make a list of things to delete...
-        List<File> toDelete = Lists.newArrayList(outputDir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File f)
-            {
-                return f.isFile();
-            }
-        }));
+        List<File> toDelete = Lists.newArrayList(outputDir.listFiles(File::isFile));
 
         Splitter splitter = Splitter.on(' ');
 

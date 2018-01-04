@@ -35,7 +35,6 @@ import net.minecraftforge.gradle.common.Constants;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFiles;
 import org.gradle.api.tasks.TaskAction;
@@ -52,15 +51,15 @@ import com.google.common.io.LineProcessor;
 public class CrowdinDownload extends DefaultTask
 {
     @Input
-    private Object              projectId;
+    private Object projectId;
     @Input
-    private Object              apiKey;
+    private Object apiKey;
     @Input
-    private boolean             extract      = true;
-    private Object              output;
+    private boolean extract = true;
+    private Object output;
 
     // format these with the projectId and apiKey
-    private static final String EXPORT_URL   = "https://api.crowdin.com/api/project/%s/export?key=%s";
+    private static final String EXPORT_URL = "https://api.crowdin.com/api/project/%s/export?key=%s";
     private static final String DOWNLOAD_URL = "https://api.crowdin.com/api/project/%s/download/all.zip?key=%s";
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -68,30 +67,24 @@ public class CrowdinDownload extends DefaultTask
     {
         super();
 
-        this.onlyIf(new Spec() {
+        this.onlyIf(arg0 -> {
+            CrowdinDownload task = (CrowdinDownload) arg0;
 
-            @Override
-            public boolean isSatisfiedBy(Object arg0)
+            // no API key? skip
+            if (Strings.isNullOrEmpty(task.getApiKey()))
             {
-                CrowdinDownload task = (CrowdinDownload) arg0;
-
-                // no API key? skip
-                if (Strings.isNullOrEmpty(task.getApiKey()))
-                {
-                    getLogger().lifecycle("Crowdin api key is null, skipping task.");
-                    return false;
-                }
-
-                // offline? skip.
-                if (getProject().getGradle().getStartParameter().isOffline())
-                {
-                    getLogger().lifecycle("Gradle is in offline mode, skipping task.");
-                    return false;
-                }
-
-                return true;
+                getLogger().lifecycle("Crowdin api key is null, skipping task.");
+                return false;
             }
 
+            // offline? skip.
+            if (getProject().getGradle().getStartParameter().isOffline())
+            {
+                getLogger().lifecycle("Gradle is in offline mode, skipping task.");
+                return false;
+            }
+
+            return true;
         });
     }
 
@@ -121,7 +114,8 @@ public class CrowdinDownload extends DefaultTask
         catch (Throwable e)
         {
             // just in case people dont have internet at the moment.
-            Throwables.propagate(e);
+            Throwables.throwIfUnchecked(e);
+            throw new RuntimeException(e);
         }
 
         int reponse = con.getResponseCode();
@@ -201,7 +195,8 @@ public class CrowdinDownload extends DefaultTask
                         zOut.putNextEntry(new ZipEntry(entry.getName()));
                         zOut.write(data.getBytes(Charsets.UTF_8));
                     }
-                } finally
+                }
+                finally
                 {
                     zStream.closeEntry();
                 }

@@ -110,7 +110,7 @@ public class DeobfuscateJar extends CachedTask
         File out = getOutJar();
 
         // make the ATs list.. its a Set to avoid duplication.
-        Set<File> ats = new HashSet<File>();
+        Set<File> ats = new HashSet<>();
         for (Object obj : this.ats)
         {
             ats.add(getProject().file(obj).getCanonicalFile());

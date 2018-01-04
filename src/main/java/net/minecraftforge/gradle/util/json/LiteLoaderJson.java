@@ -115,7 +115,7 @@ public class LiteLoaderJson
         public VersionObject deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException
         {
             VersionObject obj = new VersionObject();
-            obj.artifacts = new LinkedList<Artifact>();
+            obj.artifacts = new LinkedList<>();
             
             JsonObject repoData = json.getAsJsonObject().getAsJsonObject("repo");
             if (repoData != null)

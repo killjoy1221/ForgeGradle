@@ -29,12 +29,15 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.internal.ClosureBackedAction;
 import org.gradle.api.specs.Spec;
+import org.gradle.api.specs.Specs;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
+
+import net.minecraftforge.gradle.common.Constants;
 
 public class LiteModTask extends DefaultTask
 {
@@ -50,14 +53,7 @@ public class LiteModTask extends DefaultTask
     public LiteModTask()
     {
         this.setFileName("litemod.json");
-        this.getOutputs().upToDateWhen(new Spec<Task>()
-        {
-            @Override
-            public boolean isSatisfiedBy(Task arg0)
-            {
-                return false;
-            }
-        });
+        this.getOutputs().upToDateWhen(Constants.CALL_FALSE);
     }
 
     @TaskAction

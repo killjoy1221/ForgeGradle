@@ -91,10 +91,10 @@ public class MergeJars extends CachedTask
              ZipOutputStream outJar = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(outFile))))
         {
             // read in the jars, and initalize some variables
-            HashSet<String> resources = new HashSet<String>();
+            HashSet<String> resources = new HashSet<>();
             HashMap<String, ZipEntry> cClasses = getClassEntries(cInJar, outJar, resources);
             HashMap<String, ZipEntry> sClasses = getClassEntries(sInJar, outJar, resources);
-            HashSet<String> cAdded = new HashSet<String>();
+            HashSet<String> cAdded = new HashSet<>();
 
             // start processing
             for (Entry<String, ZipEntry> entry : cClasses.entrySet())
@@ -166,7 +166,7 @@ public class MergeJars extends CachedTask
 
         if (classNode.visibleAnnotations == null)
         {
-            classNode.visibleAnnotations = new ArrayList<AnnotationNode>();
+            classNode.visibleAnnotations = new ArrayList<>();
         }
         classNode.visibleAnnotations.add(getSideAnn(isClientOnly));
 
@@ -193,7 +193,7 @@ public class MergeJars extends CachedTask
     private AnnotationNode getSideAnn(boolean isClientOnly)
     {
         AnnotationNode ann = new AnnotationNode(Type.getDescriptor(sideOnlyClass));
-        ann.values = new ArrayList<Object>();
+        ann.values = new ArrayList<>();
         ann.values.add("value");
         ann.values.add(new String[] { Type.getDescriptor(sideClass), isClientOnly ? "CLIENT" : "SERVER" });
         return ann;
@@ -208,7 +208,7 @@ public class MergeJars extends CachedTask
      */
     private HashMap<String, ZipEntry> getClassEntries(ZipFile inFile, ZipOutputStream outFile, HashSet<String> resources) throws IOException
     {
-        HashMap<String, ZipEntry> ret = new HashMap<String, ZipEntry>();
+        HashMap<String, ZipEntry> ret = new HashMap<>();
 
         for (ZipEntry entry : Collections.list(inFile.entries()))
         {
@@ -362,7 +362,7 @@ public class MergeJars extends CachedTask
                         {
                             if (serverField.visibleAnnotations == null)
                             {
-                                serverField.visibleAnnotations = new ArrayList<AnnotationNode>();
+                                serverField.visibleAnnotations = new ArrayList<>();
                             }
                             serverField.visibleAnnotations.add(getSideAnn(false));
                             cFields.add(clientFieldIdx, serverField);
@@ -374,7 +374,7 @@ public class MergeJars extends CachedTask
                     {
                         if (clientField.visibleAnnotations == null)
                         {
-                            clientField.visibleAnnotations = new ArrayList<AnnotationNode>();
+                            clientField.visibleAnnotations = new ArrayList<>();
                         }
                         clientField.visibleAnnotations.add(getSideAnn(true));
                         sFields.add(serverFieldIdx, clientField);
@@ -387,7 +387,7 @@ public class MergeJars extends CachedTask
             {
                 if (clientField.visibleAnnotations == null)
                 {
-                    clientField.visibleAnnotations = new ArrayList<AnnotationNode>();
+                    clientField.visibleAnnotations = new ArrayList<>();
                 }
                 clientField.visibleAnnotations.add(getSideAnn(true));
                 sFields.add(serverFieldIdx, clientField);
@@ -405,7 +405,7 @@ public class MergeJars extends CachedTask
                 FieldNode sF = sFields.get(x);
                 if (sF.visibleAnnotations == null)
                 {
-                    sF.visibleAnnotations = new ArrayList<AnnotationNode>();
+                    sF.visibleAnnotations = new ArrayList<>();
                 }
                 sF.visibleAnnotations.add(getSideAnn(true));
                 cFields.add(x++, sF);

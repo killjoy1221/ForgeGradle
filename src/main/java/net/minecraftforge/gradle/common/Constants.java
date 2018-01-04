@@ -19,6 +19,8 @@
  */
 package net.minecraftforge.gradle.common;
 
+import groovy.lang.Closure;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -44,8 +46,14 @@ import java.util.concurrent.Callable;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import net.minecraftforge.gradle.patcher.PatcherExtension;
+import net.minecraftforge.gradle.util.json.version.OS;
+
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.specs.Spec;
+import org.gradle.api.specs.Specs;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -58,9 +66,6 @@ import com.google.common.io.Files;
 
 import au.com.bytecode.opencsv.CSVParser;
 import au.com.bytecode.opencsv.CSVReader;
-import groovy.lang.Closure;
-import net.minecraftforge.gradle.patcher.PatcherExtension;
-import net.minecraftforge.gradle.util.json.version.OS;
 
 public class Constants
 {
@@ -87,12 +92,7 @@ public class Constants
     public static final String GROUP_FG = "ForgeGradle";
 
     @SuppressWarnings("serial")
-    public static final Closure<Boolean> CALL_FALSE = new Closure<Boolean>(Constants.class) {
-        public Boolean call(Object o)
-        {
-            return false;
-        }
-    };
+    public static final Spec<? super Task> CALL_FALSE = Specs.SATISFIES_NONE;
 
     // replacement strings
 
@@ -213,7 +213,7 @@ public class Constants
     {
         URL[] urls = ((URLClassLoader) PatcherExtension.class.getClassLoader()).getURLs();
 
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<>();
         for (URL url : urls)
         {
             list.add(url.getPath());
@@ -223,7 +223,7 @@ public class Constants
 
     public static URL[] toUrls(FileCollection collection) throws MalformedURLException
     {
-        ArrayList<URL> urls = new ArrayList<URL>();
+        ArrayList<URL> urls = new ArrayList<>();
 
         for (File file : collection.getFiles())
             urls.add(file.toURI().toURL());
@@ -361,7 +361,7 @@ public class Constants
 
     public static List<String> hashAll(File file)
     {
-        LinkedList<String> list = new LinkedList<String>();
+        LinkedList<String> list = new LinkedList<>();
 
         if (file.isDirectory())
         {

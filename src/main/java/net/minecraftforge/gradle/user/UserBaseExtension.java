@@ -37,10 +37,10 @@ import org.gradle.api.tasks.SourceSet;
 
 public class UserBaseExtension extends BaseExtension
 {
-    private HashMap<String, Object> replacements     = new HashMap<String, Object>();
-    private ArrayList<String>       includes         = new ArrayList<String>();
-    private ArrayList<Object>       ats              = new ArrayList<Object>();
-    private ArrayList<Object>       atSources        = new ArrayList<Object>();
+    private HashMap<String, Object> replacements     = new HashMap<>();
+    private ArrayList<String>       includes         = new ArrayList<>();
+    private ArrayList<Object>       ats              = new ArrayList<>();
+    private ArrayList<Object>       atSources        = new ArrayList<>();
     private boolean                 useDepAts        = false;
     private String                  runDir           = "run";
     private boolean                 makeObfSourceJar = true;

@@ -53,11 +53,11 @@ import com.google.common.io.Files;
 public class ApplyS2STask extends DefaultTask
 {
     @InputFiles
-    private final List<Object> srg = new LinkedList<Object>();
+    private final List<Object> srg = new LinkedList<>();
 
     @Optional
     @InputFiles
-    private final List<Object> exc = new LinkedList<Object>();
+    private final List<Object> exc = new LinkedList<>();
 
     @InputFile
     private Object rangeMap;
@@ -70,7 +70,7 @@ public class ApplyS2STask extends DefaultTask
     private boolean s2sKeepImports = true;
 
     // stuff defined on the tasks..
-    private final List<Object> in = new LinkedList<Object>();
+    private final List<Object> in = new LinkedList<>();
     private Object out;
 
     @TaskAction
@@ -218,7 +218,7 @@ public class ApplyS2STask extends DefaultTask
                             name = name.substring(5, name.indexOf('_', 5));
 
                             List<String> params = Lists.newArrayList();
-                            int idx = isStatic == null || !isStatic.booleanValue() ? 1 : 0;
+                            int idx = isStatic == null || !isStatic ? 1 : 0;
                             getLogger().debug("      Name: " + name + " Idx: " + idx);
 
                             int i = 0;

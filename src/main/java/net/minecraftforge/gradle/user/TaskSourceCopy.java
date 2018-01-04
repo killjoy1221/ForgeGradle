@@ -50,10 +50,10 @@ public class TaskSourceCopy extends DefaultTask
     SourceDirectorySet      source;
 
     @Input
-    HashMap<String, Object> replacements = new HashMap<String, Object>();
+    HashMap<String, Object> replacements = new HashMap<>();
 
     @Input
-    ArrayList<String>       includes     = new ArrayList<String>();
+    ArrayList<String>       includes     = new ArrayList<>();
 
     @OutputDirectory
     Object             output;
@@ -76,7 +76,7 @@ public class TaskSourceCopy extends DefaultTask
         out = out.getCanonicalFile();
 
         // resolve replacements
-        HashMap<String, String> repl = new HashMap<String, String>(replacements.size());
+        HashMap<String, String> repl = new HashMap<>(replacements.size());
         for (Entry<String, Object> e : replacements.entrySet())
         {
             if (e.getKey() == null || e.getValue() == null)

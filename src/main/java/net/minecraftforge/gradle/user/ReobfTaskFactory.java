@@ -68,15 +68,11 @@ public class ReobfTaskFactory implements NamedDomainObjectFactory<IReobfuscator>
         plugin.setupReobf(wrapper);
 
         // do after-Evaluate resolution, for the same of good error reporting
-        plugin.project.afterEvaluate(new Action<Project>() {
-            @Override
-            public void execute(Project arg0)
+        plugin.project.afterEvaluate(arg0 -> {
+            Task jar = plugin.project.getTasks().getByName(jarName);
+            if (!(jar instanceof Jar))
             {
-                Task jar = plugin.project.getTasks().getByName(jarName);
-                if (!(jar instanceof Jar))
-                {
-                    throw new GradleConfigurationException(jarName + "  is not a jar task. Can only reobf jars!");
-                }
+                throw new GradleConfigurationException(jarName + "  is not a jar task. Can only reobf jars!");
             }
         });
 

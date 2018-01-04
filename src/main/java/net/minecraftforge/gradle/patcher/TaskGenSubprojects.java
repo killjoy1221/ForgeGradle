@@ -21,6 +21,8 @@ package net.minecraftforge.gradle.patcher;
 
 import static net.minecraftforge.gradle.common.Constants.NEWLINE;
 
+import groovy.lang.Closure;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -44,8 +46,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
-
-import groovy.lang.Closure;
 
 class TaskGenSubprojects extends DefaultTask
 {
@@ -105,8 +105,9 @@ class TaskGenSubprojects extends DefaultTask
                 String id = resource.substring(start + 2, end);
                 end += 2;
 
-                if ("repositories".equals(id))
+                switch (id)
                 {
+                case "repositories":
                     for (Repo repo : repositories)
                     {
                         lines(builder, 2,
@@ -115,9 +116,8 @@ class TaskGenSubprojects extends DefaultTask
                                 "    url '" + repo.url + "'",
                                 "}");
                     }
-                }
-                else if ("dependencies".equals(id))
-                {
+                    break;
+                case "dependencies":
                     for (String dep : dependencies)
                     {
                         if (this.depFilter != null && !this.depFilter.call(dep))
@@ -127,14 +127,13 @@ class TaskGenSubprojects extends DefaultTask
                         }
                         append(builder, INDENT, INDENT, dep, NEWLINE);
                     }
-                }
-                else if ("javaLevel".equals(id))
-                {
+                    break;
+                case "javaLevel":
                     builder.append(getJavaLevel());
-                }
-                else
-                {
+                    break;
+                default:
                     this.getProject().getLogger().lifecycle("Unknown subproject key: " + id);
+                    break;
                 }
             }
         }
@@ -297,7 +296,7 @@ class TaskGenSubprojects extends DefaultTask
     @OutputFiles
     public List<File> getGeneratedFiles()
     {
-        List<File> files = new ArrayList<File>(2 + projects.size());
+        List<File> files = new ArrayList<>(2 + projects.size());
         File workspace = getWorkspaceDir();
         files.add(new File(workspace, "build.gradle"));
         files.add(new File(workspace, "settings.gradle"));

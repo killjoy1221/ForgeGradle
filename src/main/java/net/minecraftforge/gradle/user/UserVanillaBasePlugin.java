@@ -64,13 +64,9 @@ public abstract class UserVanillaBasePlugin<T extends UserBaseExtension> extends
     protected void afterDecomp(final boolean isDecomp, final boolean useLocalCache, final String mcConfig)
     {
         // add MC repo to all projects
-        project.allprojects(new Action<Project>() {
-            @Override
-            public void execute(Project proj)
-            {
-                String cleanRoot = CLEAN_ROOT + getJarName() + "/" + REPLACE_MC_VERSION + "/" + MCP_INSERT;
-                addFlatRepo(proj, "VanillaMcRepo", delayedFile(useLocalCache ? DIR_LOCAL_CACHE : cleanRoot).call());
-            }
+        project.allprojects(proj -> {
+            String cleanRoot = CLEAN_ROOT + getJarName() + "/" + REPLACE_MC_VERSION + "/" + MCP_INSERT;
+            addFlatRepo(proj, "VanillaMcRepo", delayedFile(useLocalCache ? DIR_LOCAL_CACHE : cleanRoot).call());
         });
 
         // add the Mc dep

@@ -332,7 +332,7 @@ public class PostDecompileTask extends AbstractEditJarTask
         @Override
         public List<String> getData(String target)
         {
-            List<String> out = new ArrayList<String>(data.size() + 5);
+            List<String> out = new ArrayList<>(data.size() + 5);
             out.addAll(data);
             return out;
         }

@@ -52,8 +52,8 @@ import com.google.common.io.ByteStreams;
 class TaskExtractNew extends DefaultTask
 {
     //@formatter:off
-    private final List<Object>      clean = new LinkedList<Object>();
-    private final List<Object>      dirty = new LinkedList<Object>();
+    private final List<Object>      clean = new LinkedList<>();
+    private final List<Object>      dirty = new LinkedList<>();
     @Input @Optional private String ending;
     @OutputFile      private Object output;
     //@formatter:on
@@ -144,7 +144,7 @@ class TaskExtractNew extends DefaultTask
 
     public List<File> getCleanSource()
     {
-        List<File> files = new LinkedList<File>();
+        List<File> files = new LinkedList<>();
         for (Object f : clean)
             files.add(getProject().file(f));
         return files;
@@ -163,7 +163,7 @@ class TaskExtractNew extends DefaultTask
 
     public List<File> getDirtySource()
     {
-        List<File> files = new LinkedList<File>();
+        List<File> files = new LinkedList<>();
         for (Object f : dirty)
             files.add(getProject().file(f));
         return files;

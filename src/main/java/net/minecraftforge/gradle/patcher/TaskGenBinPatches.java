@@ -72,10 +72,10 @@ class TaskGenBinPatches extends DefaultTask
     //@formatter:on
 
     private List<Object>             patchSets    = Lists.newArrayList();
-    private HashMap<String, String>  obfMapping   = new HashMap<String, String>();
-    private HashMap<String, String>  srgMapping   = new HashMap<String, String>();
+    private HashMap<String, String>  obfMapping   = new HashMap<>();
+    private HashMap<String, String>  srgMapping   = new HashMap<>();
     private Multimap<String, String> innerClasses = ArrayListMultimap.create();
-    private Set<String>              patchedFiles = new HashSet<String>();
+    private Set<String>              patchedFiles = new HashSet<>();
     private Delta                    delta        = new Delta();
 
     //@formatter:off
@@ -107,8 +107,8 @@ class TaskGenBinPatches extends DefaultTask
             }
         }
 
-        HashMap<String, byte[]> runtime = new HashMap<String, byte[]>();
-        HashMap<String, byte[]> devtime = new HashMap<String, byte[]>();
+        HashMap<String, byte[]> runtime = new HashMap<>();
+        HashMap<String, byte[]> devtime = new HashMap<>();
 
         File dirtyJar = getDirtyJar();
 

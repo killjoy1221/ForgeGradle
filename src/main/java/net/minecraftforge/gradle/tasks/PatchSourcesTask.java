@@ -432,7 +432,7 @@ public class PatchSourcesTask extends AbstractEditJarTask
             if (fileMap.containsKey(target))
             {
                 String[] lines = fileMap.get(target).split("\r\n|\r|\n");
-                List<String> ret = new ArrayList<String>();
+                List<String> ret = new ArrayList<>();
                 for (String line : lines)
                 {
                     ret.add(line);

@@ -88,8 +88,8 @@ public class MultiDirSupplier implements InputSupplier, OutputSupplier
     public List<String> gatherAll(String endFilter)
     {
         // stolen from the FolderSupplier.
-        LinkedList<String> out = new LinkedList<String>();
-        Stack<File> dirStack = new Stack<File>();
+        LinkedList<String> out = new LinkedList<>();
+        Stack<File> dirStack = new Stack<>();
 
         for (File root : dirs)
         {

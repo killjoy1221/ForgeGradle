@@ -61,22 +61,8 @@ public class PatcherPlugin extends BasePlugin<PatcherExtension>
 
         NamedDomainObjectContainer<PatcherProject> container = project.container(PatcherProject.class, new PatcherProjectFactory(this));
         getExtension().setProjectContainer(container);
-        container.whenObjectAdded(new Action<PatcherProject>() {
-            @Override
-            public void execute(PatcherProject arg0)
-            {
-                createProject(arg0);
-            }
-
-        });
-        container.whenObjectRemoved(new Action<PatcherProject>() {
-            @Override
-            public void execute(PatcherProject arg0)
-            {
-                removeProject(arg0);
-            }
-
-        });
+        container.whenObjectAdded(this::createProject);
+        container.whenObjectRemoved(this::removeProject);
 
         // top level tasks
         {
@@ -964,7 +950,7 @@ public class PatcherPlugin extends BasePlugin<PatcherExtension>
         // now  patched->patcher
         tempMap = tempMap.inverse();
 
-        ArrayList<PatcherProject> list = new ArrayList<PatcherProject>(projects.size());
+        ArrayList<PatcherProject> list = new ArrayList<>(projects.size());
         PatcherProject key = tempMap.remove(null); // null is clean
         while (key != null)
         {

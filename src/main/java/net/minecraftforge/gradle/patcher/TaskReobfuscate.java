@@ -62,7 +62,7 @@ class TaskReobfuscate extends DefaultTask
     //@formatter: on
     
     @Input
-    private LinkedList<String> extraSrg = new LinkedList<String>();
+    private LinkedList<String> extraSrg = new LinkedList<>();
     
     @InputFiles
     private List<Object> libs = Lists.newArrayList();

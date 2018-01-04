@@ -9,13 +9,11 @@ import net.minecraftforge.gradle.common.Constants;
 import net.minecraftforge.gradle.tasks.EtagDownloadTask;
 import net.minecraftforge.gradle.tasks.ExtractTask;
 
-import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.file.CopySpec;
-import org.gradle.api.file.FileTree;
 import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.plugins.JavaPlugin;
@@ -26,6 +24,7 @@ import org.gradle.api.tasks.bundling.Jar;
 public class Launch4jPlugin implements Plugin<Project>
 {
 
+    //@formatter:off
     static final String LAUNCH4J_PLUGIN_NAME        = "launch4j";
     static final String LAUNCH4J_GROUP              = LAUNCH4J_PLUGIN_NAME;
     static final String LAUNCH4J_CONFIGURATION_NAME = LAUNCH4J_PLUGIN_NAME;
@@ -43,6 +42,7 @@ public class Launch4jPlugin implements Plugin<Project>
     static final String DIR_LAUNCH4J                = "build/launch4j";
 
     private Project     project;
+    //@formatter:on
 
     public void apply(Project project)
     {
@@ -91,31 +91,23 @@ public class Launch4jPlugin implements Plugin<Project>
         extractTask.from(input);
         extractTask.into(output);
 
-        extractTask.doLast(new Action<Task>() {
+        extractTask.doLast(task -> project.fileTree(output.getPath() + "/bin").visit(new FileVisitor()
+        {
+            @Override
+            public void visitDir(FileVisitDetails dirDetails)
+            {
+            }
 
             @Override
-            public void execute(Task task)
+            public void visitFile(FileVisitDetails fileDetails)
             {
-                FileTree tree = project.fileTree(output.getPath() + "/bin");
-                tree.visit(new FileVisitor()
+                if (!fileDetails.getFile().canExecute())
                 {
-                    @Override
-                    public void visitDir(FileVisitDetails dirDetails)
-                    {
-                    }
-
-                    @Override
-                    public void visitFile(FileVisitDetails fileDetails)
-                    {
-                        if (!fileDetails.getFile().canExecute())
-                        {
-                            boolean worked = fileDetails.getFile().setExecutable(true);
-                            project.getLogger().info("Setting file +X " + worked + " : " + fileDetails.getPath());
-                        }
-                    }
-                });
+                    boolean worked = fileDetails.getFile().setExecutable(true);
+                    project.getLogger().info("Setting file +X " + worked + " : " + fileDetails.getPath());
+                }
             }
-        });
+        }));
 
         return extractTask;
     }
@@ -154,17 +146,13 @@ public class Launch4jPlugin implements Plugin<Project>
         final JavaExec task = makeTask(TASK_RUN_NAME, JavaExec.class);
         task.setDescription("Runs launch4j to generate an .exe file");
         task.setGroup(LAUNCH4J_GROUP);
-        project.afterEvaluate(new Action<Project>() {
-            @Override
-            public void execute(Project project)
-            {
-                Launch4jPluginExtension ext = ((Launch4jPluginExtension) task.getProject().getExtensions().getByName(Launch4jPlugin.LAUNCH4J_CONFIGURATION_NAME));
+        project.afterEvaluate(project -> {
+            Launch4jPluginExtension ext = ((Launch4jPluginExtension) task.getProject().getExtensions().getByName(Launch4jPlugin.LAUNCH4J_CONFIGURATION_NAME));
 
-                task.setMain("net.sf.launch4j.Main");
-                task.args(project.getBuildDir() + "/" + ext.getOutputDir() + "/" + ext.getXmlFileName());
-                task.setWorkingDir(project.file(ext.getChdir()));
-                task.setClasspath(project.fileTree(launch4JDir));
-            }
+            task.setMain("net.sf.launch4j.Main");
+            task.args(project.getBuildDir() + "/" + ext.getOutputDir() + "/" + ext.getXmlFileName());
+            task.setWorkingDir(project.file(ext.getChdir()));
+            task.setClasspath(project.fileTree(launch4JDir));
         });
         return task;
     }
@@ -202,7 +190,7 @@ public class Launch4jPlugin implements Plugin<Project>
     @SuppressWarnings("unchecked")
     public static <T extends Task> T makeTask(Project proj, String name, Class<T> type)
     {
-        HashMap<String, Object> map = new HashMap<String, Object>();
+        HashMap<String, Object> map = new HashMap<>();
         map.put("name", name);
         map.put("type", type);
         return (T) proj.task(map, name);

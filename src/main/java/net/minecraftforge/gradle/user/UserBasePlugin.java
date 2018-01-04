@@ -43,7 +43,6 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.XmlProvider;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.Dependency;
@@ -58,7 +57,6 @@ import org.gradle.api.artifacts.result.ComponentArtifactsResult;
 import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -107,15 +105,6 @@ import net.minecraftforge.gradle.util.delayed.DelayedFile;
 public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePlugin<T>
 {
     private boolean madeDecompTasks = false; // to gaurd against stupid programmers
-    private final Closure<Object> makeRunDir = new Closure<Object>(UserBasePlugin.class) {
-        private static final long serialVersionUID = 7787405048420669566L;
-
-        public Object call()
-        {
-            delayedFile(REPLACE_RUN_DIR).call().mkdirs();
-            return null;
-        }
-    };
 
     @Override
     public final void applyPlugin()
@@ -199,13 +188,9 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
         mapConfigurations();
 
         // configure source replacement.
-        project.getTasks().withType(TaskSourceCopy.class, new Action<TaskSourceCopy>() {
-            @Override
-            public void execute(TaskSourceCopy t)
-            {
-                t.replace(getExtension().getReplacements());
-                t.include(getExtension().getIncludes());
-            }
+        project.getTasks().withType(TaskSourceCopy.class, t -> {
+            t.replace(getExtension().getReplacements());
+            t.include(getExtension().getIncludes());
         });
 
         // add access transformers to deobf tasks
@@ -417,25 +402,21 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
 
         // configure MC compiling. This AfterEvaluate section should happen after the one made in
         // also configure the dummy task dependencies
-        project.afterEvaluate(new Action<Project>() {
-            @Override
-            public void execute(Project project)
+        project.afterEvaluate(project -> {
+            if (project.getState().getFailure() != null)
+                return;
+
+            // the recompiled jar exists, or the decomp task is part of the build
+            boolean isDecomp = project.file(recompiledJar).exists() || project.getGradle().getStartParameter().getTaskNames().contains(TASK_SETUP_DECOMP);
+
+            // set task dependencies
+            if (!isDecomp)
             {
-                if (project.getState().getFailure() != null)
-                    return;
-
-                // the recompiled jar exists, or the decomp task is part of the build
-                boolean isDecomp = project.file(recompiledJar).exists() || project.getGradle().getStartParameter().getTaskNames().contains(TASK_SETUP_DECOMP);
-
-                // set task dependencies
-                if (!isDecomp)
-                {
-                    project.getTasks().getByName("compileJava").dependsOn(UserConstants.TASK_DEOBF_BIN);
-                    project.getTasks().getByName("compileApiJava").dependsOn(UserConstants.TASK_DEOBF_BIN);
-                }
-
-                afterDecomp(isDecomp, useLocalCache(getExtension()), CONFIG_MC);
+                project.getTasks().getByName("compileJava").dependsOn(UserConstants.TASK_DEOBF_BIN);
+                project.getTasks().getByName("compileApiJava").dependsOn(UserConstants.TASK_DEOBF_BIN);
             }
+
+            afterDecomp(isDecomp, useLocalCache(getExtension()), CONFIG_MC);
         });
     }
 
@@ -546,95 +527,82 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
     {
         JavaPluginConvention javaConv = (JavaPluginConvention) project.getConvention().getPlugins().get("java");
 
-        Action<SourceSet> action = new Action<SourceSet>() {
-            @Override
-            public void execute(SourceSet set) {
+        Action<SourceSet> action = set -> {
 
-                TaskSourceCopy task;
+            TaskSourceCopy task;
 
-                String capName = set.getName().substring(0, 1).toUpperCase() + set.getName().substring(1);
-                String taskPrefix = "source"+capName;
-                File dirRoot = new File(project.getBuildDir(), "sources/"+set.getName());
+            String capName = set.getName().substring(0, 1).toUpperCase() + set.getName().substring(1);
+            String taskPrefix = "source"+capName;
+            File dirRoot = new File(project.getBuildDir(), "sources/"+set.getName());
 
-                // java
-                {
-                    File dir = new File(dirRoot, "java");
+            // java
+            {
+                File dir = new File(dirRoot, "java");
 
-                    task = makeTask(taskPrefix+"Java", TaskSourceCopy.class);
-                    task.setSource(set.getJava());
-                    task.setOutput(dir);
+                task = makeTask(taskPrefix+"Java", TaskSourceCopy.class);
+                task.setSource(set.getJava());
+                task.setOutput(dir);
 
-                    // must get replacements from extension afterEvaluate()
+                // must get replacements from extension afterEvaluate()
 
-                    JavaCompile compile = (JavaCompile) project.getTasks().getByName(set.getCompileJavaTaskName());
-                    compile.dependsOn(task);
-                    compile.setSource(dir);
-                }
+                JavaCompile compile = (JavaCompile) project.getTasks().getByName(set.getCompileJavaTaskName());
+                compile.dependsOn(task);
+                compile.setSource(dir);
+            }
 
-                // scala
-                if (project.getPlugins().hasPlugin("scala"))
-                {
-                    ScalaSourceSet langSet = (ScalaSourceSet) new DslObject(set).getConvention().getPlugins().get("scala");
-                    File dir = new File(dirRoot, "scala");
+            // scala
+            if (project.getPlugins().hasPlugin("scala"))
+            {
+                ScalaSourceSet langSet = (ScalaSourceSet) new DslObject(set).getConvention().getPlugins().get("scala");
+                File dir = new File(dirRoot, "scala");
 
-                    task = makeTask(taskPrefix+"Scala", TaskSourceCopy.class);
-                    task.setSource(langSet.getScala());
-                    task.setOutput(dir);
+                task = makeTask(taskPrefix+"Scala", TaskSourceCopy.class);
+                task.setSource(langSet.getScala());
+                task.setOutput(dir);
 
-                    // must get replacements from extension afterEValuate()
+                // must get replacements from extension afterEValuate()
 
-                    ScalaCompile compile = (ScalaCompile) project.getTasks().getByName(set.getCompileTaskName("scala"));
-                    compile.dependsOn(task);
-                    compile.setSource(dir);
-                }
+                ScalaCompile compile = (ScalaCompile) project.getTasks().getByName(set.getCompileTaskName("scala"));
+                compile.dependsOn(task);
+                compile.setSource(dir);
+            }
 
-                // groovy
-                if (project.getPlugins().hasPlugin("groovy"))
-                {
-                    GroovySourceSet langSet = (GroovySourceSet) new DslObject(set).getConvention().getPlugins().get("groovy");
-                    File dir = new File(dirRoot, "groovy");
+            // groovy
+            if (project.getPlugins().hasPlugin("groovy"))
+            {
+                GroovySourceSet langSet = (GroovySourceSet) new DslObject(set).getConvention().getPlugins().get("groovy");
+                File dir = new File(dirRoot, "groovy");
 
-                    task = makeTask(taskPrefix+"Groovy", TaskSourceCopy.class);
-                    task.setSource(langSet.getGroovy());
-                    task.setOutput(dir);
+                task = makeTask(taskPrefix+"Groovy", TaskSourceCopy.class);
+                task.setSource(langSet.getGroovy());
+                task.setOutput(dir);
 
-                    // must get replacements from extension afterEValuate()
+                // must get replacements from extension afterEValuate()
 
-                    GroovyCompile compile = (GroovyCompile) project.getTasks().getByName(set.getCompileTaskName("groovy"));
-                    compile.dependsOn(task);
-                    compile.setSource(dir);
-                }
+                GroovyCompile compile = (GroovyCompile) project.getTasks().getByName(set.getCompileTaskName("groovy"));
+                compile.dependsOn(task);
+                compile.setSource(dir);
+            }
 
-                // kotlin
-                if (project.getPlugins().hasPlugin("kotlin"))
-                {
-                    KotlinSourceSet langSet = (KotlinSourceSet) new DslObject(set).getConvention().getPlugins().get("kotlin");
-                    File dir = new File(dirRoot, "kotlin");
+            // kotlin
+            if (project.getPlugins().hasPlugin("kotlin"))
+            {
+                KotlinSourceSet langSet = (KotlinSourceSet) new DslObject(set).getConvention().getPlugins().get("kotlin");
+                File dir = new File(dirRoot, "kotlin");
 
-                    task = makeTask(taskPrefix+"Kotlin", TaskSourceCopy.class);
-                    task.setSource(langSet.getKotlin());
-                    task.setOutput(dir);
+                task = makeTask(taskPrefix+"Kotlin", TaskSourceCopy.class);
+                task.setSource(langSet.getKotlin());
+                task.setOutput(dir);
 
-                    // must get replacements from extension afterEValuate()
+                // must get replacements from extension afterEValuate()
 
-                    KotlinCompile compile = (KotlinCompile) project.getTasks().getByName(set.getCompileTaskName("kotlin"));
-                    compile.dependsOn(task);
-                    compile.setSource(dir);
-                    Path dirPath = dir.toPath();
+                KotlinCompile compile = (KotlinCompile) project.getTasks().getByName(set.getCompileTaskName("kotlin"));
+                compile.dependsOn(task);
+                compile.setSource(dir);
+                Path dirPath = dir.toPath();
 
-                    // Apparently the Kotlin plugin doesn't respect setSource in any way, so this is required
-                    compile.include(new Closure<Boolean>(UserBasePlugin.class)
-                    {
-                        @Override
-                        public Boolean call(Object o)
-                        {
-                            if (o instanceof FileTreeElement) {
-                                return ((FileTreeElement) o).getFile().toPath().startsWith(dirPath);
-                            }
-                            return super.call();
-                        }
-                    });
-                }
+                // Apparently the Kotlin plugin doesn't respect setSource in any way, so this is required
+                compile.include(o -> o.getFile().toPath().startsWith(dirPath));
             }
         };
 
@@ -658,19 +626,15 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
     protected void setupDevTimeDeobf(final Task compileDummy, final Task providedDummy)
     {
         // die wih error if I find invalid types...
-        project.afterEvaluate(new Action<Project>() {
-            @Override
-            public void execute(Project project)
-            {
-                if (project.getState().getFailure() != null)
-                    return;
+        project.afterEvaluate(project -> {
+            if (project.getState().getFailure() != null)
+                return;
 
-                // add maven repo
-                addMavenRepo(project, "deobfDeps", delayedFile(DIR_DEOBF_DEPS).call().getAbsoluteFile().toURI().getPath());
+            // add maven repo
+            addMavenRepo(project, "deobfDeps", delayedFile(DIR_DEOBF_DEPS).call().getAbsoluteFile().toURI().getPath());
 
-                remapDeps(project, project.getConfigurations().getByName(CONFIG_DEOBF_COMPILE), CONFIG_DC_RESOLVED, compileDummy);
-                remapDeps(project, project.getConfigurations().getByName(CONFIG_DEOBF_PROVIDED), CONFIG_DP_RESOLVED, providedDummy);
-            }
+            remapDeps(project, project.getConfigurations().getByName(CONFIG_DEOBF_COMPILE), CONFIG_DC_RESOLVED, compileDummy);
+            remapDeps(project, project.getConfigurations().getByName(CONFIG_DEOBF_PROVIDED), CONFIG_DP_RESOLVED, providedDummy);
         });
     }
 
@@ -758,24 +722,15 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
         extract.addCollection(CONFIG_DEOBF_COMPILE);
         extract.addCollection(CONFIG_DEOBF_PROVIDED);
         extract.setOutputDir(delayedFile(DIR_DEP_ATS));
-        extract.onlyIf(new Spec<Object>() {
-            @Override
-            public boolean isSatisfiedBy(Object arg0)
-            {
-                return getExtension().isUseDepAts();
-            }
-        });
-        extract.doLast(new Action<Task>() {
-            @Override public void execute(Task task)
-            {
-                DeobfuscateJar binDeobf = (DeobfuscateJar) task.getProject().getTasks().getByName(TASK_DEOBF_BIN);
-                DeobfuscateJar decompDeobf = (DeobfuscateJar) task.getProject().getTasks().getByName(TASK_DEOBF);
+        extract.onlyIf((Spec<Object>) arg0 -> getExtension().isUseDepAts());
+        extract.doLast(task -> {
+            DeobfuscateJar binDeobf = (DeobfuscateJar) task.getProject().getTasks().getByName(TASK_DEOBF_BIN);
+            DeobfuscateJar decompDeobf = (DeobfuscateJar) task.getProject().getTasks().getByName(TASK_DEOBF);
 
-                for (File file : task.getProject().fileTree(delayedFile(DIR_DEP_ATS)))
-                {
-                    binDeobf.addAt(file);
-                    decompDeobf.addAt(file);
-                }
+            for (File file : task.getProject().fileTree(delayedFile(DIR_DEP_ATS)))
+            {
+                binDeobf.addAt(file);
+                decompDeobf.addAt(file);
             }
         });
 
@@ -786,63 +741,48 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
     {
         JavaPluginConvention javaConv = (JavaPluginConvention) project.getConvention().getPlugins().get("java");
 
-        Action<SourceSet> retromapCreator = new Action<SourceSet>() {
-            @Override
-            public void execute(final SourceSet set) {
+        Action<SourceSet> retromapCreator = set -> {
 
-                // native non-replaced
-                DelayedFile rangeMap = delayedFile(getSourceSetFormatted(set, TMPL_RANGEMAP));
-                DelayedFile retroMapped = delayedFile(getSourceSetFormatted(set, TMPL_RETROMAPED));
+            // native non-replaced
+            DelayedFile rangeMap = delayedFile(getSourceSetFormatted(set, TMPL_RANGEMAP));
+            DelayedFile retroMapped = delayedFile(getSourceSetFormatted(set, TMPL_RETROMAPED));
 
-                final ExtractS2SRangeTask extractRangemap = makeTask(getSourceSetFormatted(set, TMPL_TASK_RANGEMAP), ExtractS2SRangeTask.class);
-                extractRangemap.addSource(new File(project.getBuildDir(), "sources/main/java"));
-                extractRangemap.setRangeMap(rangeMap);
-                project.afterEvaluate(new Action<Project>() {
-                    @Override
-                    public void execute(Project project)
-                    {
-                        extractRangemap.addLibs(set.getCompileClasspath());
-                    }
-                });
+            final ExtractS2SRangeTask extractRangemap = makeTask(getSourceSetFormatted(set, TMPL_TASK_RANGEMAP), ExtractS2SRangeTask.class);
+            extractRangemap.addSource(new File(project.getBuildDir(), "sources/main/java"));
+            extractRangemap.setRangeMap(rangeMap);
+            project.afterEvaluate(project -> extractRangemap.addLibs(set.getCompileClasspath()));
 
-                ApplyS2STask retromap = makeTask(getSourceSetFormatted(set, TMPL_TASK_RETROMAP), ApplyS2STask.class);
-                retromap.addSource(set.getAllJava());
-                retromap.setOut(retroMapped);
-                retromap.addSrg(delayedFile(SRG_MCP_TO_SRG));
-                retromap.addExc(delayedFile(EXC_MCP));
-                retromap.addExc(delayedFile(EXC_SRG));
-                retromap.setRangeMap(rangeMap);
-                retromap.dependsOn(TASK_GENERATE_SRGS, extractRangemap);
+            ApplyS2STask retromap = makeTask(getSourceSetFormatted(set, TMPL_TASK_RETROMAP), ApplyS2STask.class);
+            retromap.addSource(set.getAllJava());
+            retromap.setOut(retroMapped);
+            retromap.addSrg(delayedFile(SRG_MCP_TO_SRG));
+            retromap.addExc(delayedFile(EXC_MCP));
+            retromap.addExc(delayedFile(EXC_SRG));
+            retromap.setRangeMap(rangeMap);
+            retromap.dependsOn(TASK_GENERATE_SRGS, extractRangemap);
 
-                // TODO: add replacing extract task
+            // TODO: add replacing extract task
 
 
-                // for replaced sources
-                rangeMap = delayedFile(getSourceSetFormatted(set, TMPL_RANGEMAP_RPL));
-                retroMapped = delayedFile(getSourceSetFormatted(set, TMPL_RETROMAPED_RPL));
-                File replacedSource = new File(project.getBuildDir(), "sources/"+set.getName()+"/java");
+            // for replaced sources
+            rangeMap = delayedFile(getSourceSetFormatted(set, TMPL_RANGEMAP_RPL));
+            retroMapped = delayedFile(getSourceSetFormatted(set, TMPL_RETROMAPED_RPL));
+            File replacedSource = new File(project.getBuildDir(), "sources/"+set.getName()+"/java");
 
-                final ExtractS2SRangeTask extractRangemap2 = makeTask(getSourceSetFormatted(set, TMPL_TASK_RANGEMAP_RPL), ExtractS2SRangeTask.class);
-                extractRangemap2.addSource(replacedSource);
-                extractRangemap2.setRangeMap(rangeMap);
-                project.afterEvaluate(new Action<Project>() {
-                    @Override
-                    public void execute(Project project)
-                    {
-                        extractRangemap2.addLibs(set.getCompileClasspath());
-                    }
-                });
-                extractRangemap2.dependsOn(getSourceSetFormatted(set, "source%sJava"));
+            final ExtractS2SRangeTask extractRangemap2 = makeTask(getSourceSetFormatted(set, TMPL_TASK_RANGEMAP_RPL), ExtractS2SRangeTask.class);
+            extractRangemap2.addSource(replacedSource);
+            extractRangemap2.setRangeMap(rangeMap);
+            project.afterEvaluate(project -> extractRangemap2.addLibs(set.getCompileClasspath()));
+            extractRangemap2.dependsOn(getSourceSetFormatted(set, "source%sJava"));
 
-                retromap = makeTask(getSourceSetFormatted(set, TMPL_TASK_RETROMAP_RPL), ApplyS2STask.class);
-                retromap.addSource(replacedSource);
-                retromap.setOut(retroMapped);
-                retromap.addSrg(delayedFile(SRG_MCP_TO_SRG));
-                retromap.addExc(delayedFile(EXC_MCP));
-                retromap.addExc(delayedFile(EXC_SRG));
-                retromap.setRangeMap(rangeMap);
-                retromap.dependsOn(TASK_GENERATE_SRGS, extractRangemap2);
-            }
+            retromap = makeTask(getSourceSetFormatted(set, TMPL_TASK_RETROMAP_RPL), ApplyS2STask.class);
+            retromap.addSource(replacedSource);
+            retromap.setOut(retroMapped);
+            retromap.addSrg(delayedFile(SRG_MCP_TO_SRG));
+            retromap.addExc(delayedFile(EXC_MCP));
+            retromap.addExc(delayedFile(EXC_SRG));
+            retromap.setRangeMap(rangeMap);
+            retromap.dependsOn(TASK_GENERATE_SRGS, extractRangemap2);
         };
 
         // for existing sourceSets
@@ -875,20 +815,16 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
         });
 
         // get scala & kotlin sources too
-        project.afterEvaluate(new Action<Project>()
-        {
-            @Override public void execute(Project project)
+        project.afterEvaluate(project -> {
+            if (project.getPlugins().hasPlugin("scala"))
             {
-                if (project.getPlugins().hasPlugin("scala"))
-                {
-                    ScalaSourceSet langSet = (ScalaSourceSet) new DslObject(main).getConvention().getPlugins().get("scala");
-                    sourceJar.from(langSet.getAllScala());
-                }
-                if (project.getPlugins().hasPlugin("kotlin"))
-                {
-                    KotlinSourceSet langSet = (KotlinSourceSet) new DslObject(main).getConvention().getPlugins().get("kotlin");
-                    sourceJar.from(langSet.getKotlin());
-                }
+                ScalaSourceSet langSet = (ScalaSourceSet) new DslObject(main).getConvention().getPlugins().get("scala");
+                sourceJar.from(langSet.getAllScala());
+            }
+            if (project.getPlugins().hasPlugin("kotlin"))
+            {
+                KotlinSourceSet langSet = (KotlinSourceSet) new DslObject(main).getConvention().getPlugins().get("kotlin");
+                sourceJar.from(langSet.getKotlin());
             }
         });
     }
@@ -907,7 +843,7 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
             exec.setGroup("ForgeGradle");
             exec.setDescription("Runs the Minecraft client");
 
-            exec.doFirst(makeRunDir);
+            exec.doFirst(this::makeRunDir);
 
             exec.dependsOn("makeStart");
         }
@@ -925,7 +861,7 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
             exec.setGroup("ForgeGradle");
             exec.setDescription("Runs the Minecraft Server");
 
-            exec.doFirst(makeRunDir);
+            exec.doFirst(this::makeRunDir);
 
             exec.dependsOn("makeStart");
         }
@@ -960,14 +896,7 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
         }
     }
 
-    private static final Spec<File> AT_SPEC = new Spec<File>()
-    {
-        @Override
-        public boolean isSatisfiedBy(File file)
-        {
-            return file.isFile() && file.getName().toLowerCase().endsWith("_at.cfg");
-        }
-    };
+    private static final Spec<File> AT_SPEC = file -> file.isFile() && file.getName().toLowerCase().endsWith("_at.cfg");
 
     protected void addAtsToDeobf()
     {
@@ -1096,7 +1025,7 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
             eclipseClient.setOutputFile(project.file(project.getName() + "_Client.launch"));
             eclipseClient.setRunDir(delayedFile(REPLACE_RUN_DIR));
             eclipseClient.dependsOn(TASK_MAKE_START);
-            eclipseClient.doFirst(makeRunDir);
+            eclipseClient.doFirst(this::makeRunDir);
 
             project.getTasks().getByName("eclipse").dependsOn(eclipseClient);
             project.getTasks().getByName("cleanEclipse").dependsOn("cleanMakeEclipseCleanRunClient");
@@ -1110,35 +1039,29 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
             eclipseServer.setOutputFile(project.file(project.getName() + "_Server.launch"));
             eclipseServer.setRunDir(delayedFile(REPLACE_RUN_DIR));
             eclipseServer.dependsOn(TASK_MAKE_START);
-            eclipseServer.doFirst(makeRunDir);
+            eclipseServer.doFirst(this::makeRunDir);
 
             project.getTasks().getByName("eclipse").dependsOn(eclipseServer);
             project.getTasks().getByName("cleanEclipse").dependsOn("cleanMakeEclipseCleanRunServer");
         }
 
-        project.afterEvaluate(new Action<Project>() {
+        project.afterEvaluate(project -> {
+            if (project.getState().getFailure() != null)
+                return;
 
-            @Override
-            public void execute(Project project)
+            T ext = getExtension();
+            if (hasClientRun())
             {
-                if (project.getState().getFailure() != null)
-                    return;
-
-                T ext = getExtension();
-                if (hasClientRun())
-                {
-                    GenEclipseRunTask task = ((GenEclipseRunTask) project.getTasks().getByName("makeEclipseCleanRunClient"));
-                    task.setArguments(Joiner.on(' ').join(getClientRunArgs(ext)));
-                    task.setJvmArguments(Joiner.on(' ').join(getClientJvmArgs(ext)));
-                }
-                if (hasServerRun())
-                {
-                    GenEclipseRunTask task = ((GenEclipseRunTask) project.getTasks().getByName("makeEclipseCleanRunServer"));
-                    task.setArguments(Joiner.on(' ').join(getServerRunArgs(ext)));
-                    task.setJvmArguments(Joiner.on(' ').join(getServerJvmArgs(ext)));
-                }
+                GenEclipseRunTask task = ((GenEclipseRunTask) project.getTasks().getByName("makeEclipseCleanRunClient"));
+                task.setArguments(Joiner.on(' ').join(getClientRunArgs(ext)));
+                task.setJvmArguments(Joiner.on(' ').join(getClientJvmArgs(ext)));
             }
-
+            if (hasServerRun())
+            {
+                GenEclipseRunTask task = ((GenEclipseRunTask) project.getTasks().getByName("makeEclipseCleanRunServer"));
+                task.setArguments(Joiner.on(' ').join(getServerRunArgs(ext)));
+                task.setJvmArguments(Joiner.on(' ').join(getServerJvmArgs(ext)));
+            }
         });
 
         // other dependencies
@@ -1164,71 +1087,67 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
         ideaConv.getModule().getScopes().get("COMPILE").get("plus").add(project.getConfigurations().getByName(CONFIG_PROVIDED));
 
         // add deobf task dependencies
-        project.getTasks().getByName("ideaModule").dependsOn(TASK_DD_COMPILE, TASK_DD_PROVIDED).doFirst(makeRunDir);
+        project.getTasks().getByName("ideaModule").dependsOn(TASK_DD_COMPILE, TASK_DD_PROVIDED).doFirst(this::makeRunDir);
 
         // fix the idea bug
         ideaConv.getModule().setInheritOutputDirs(true);
 
         Task task = makeTask("genIntellijRuns", DefaultTask.class);
-        task.doFirst(makeRunDir);
-        task.doLast(new Action<Task>() {
-            @Override
-            public void execute(Task task)
+        task.doFirst(this::makeRunDir);
+        task.doLast(task1 -> {
+            try
             {
-                try
-                {
-                    String module = task.getProject().getProjectDir().getCanonicalPath();
+                String module = task1.getProject().getProjectDir().getCanonicalPath();
 
-                    File root = task.getProject().getProjectDir().getCanonicalFile();
-                    File file = null;
-                    while (file == null && !root.equals(task.getProject().getRootProject().getProjectDir().getCanonicalFile().getParentFile()))
+                File root = task1.getProject().getProjectDir().getCanonicalFile();
+                File file = null;
+                while (file == null && !root.equals(task1.getProject().getRootProject().getProjectDir().getCanonicalFile().getParentFile()))
+                {
+                    file = new File(root, ".idea/workspace.xml");
+                    if (!file.exists())
                     {
-                        file = new File(root, ".idea/workspace.xml");
-                        if (!file.exists())
+                        file = null;
+                        // find iws file
+                        for (File f : root.listFiles())
                         {
-                            file = null;
-                            // find iws file
-                            for (File f : root.listFiles())
+                            if (f.isFile() && f.getName().endsWith(".iws"))
                             {
-                                if (f.isFile() && f.getName().endsWith(".iws"))
-                                {
-                                    file = f;
-                                    break;
-                                }
+                                file = f;
+                                break;
                             }
                         }
-
-                        root = root.getParentFile();
                     }
 
-                    if (file == null || !file.exists())
-                        throw new RuntimeException("Intellij workspace file could not be found! are you sure you imported the project into intellij?");
-
-                    DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-                    DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-                    Document doc = docBuilder.parse(file);
-
-                    injectIntellijRuns(doc, module);
-
-                    // write the content into xml file
-                    TransformerFactory transformerFactory = TransformerFactory.newInstance();
-                    Transformer transformer = transformerFactory.newTransformer();
-                    transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-                    transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-                    transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-                    transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-                    transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-
-                    DOMSource source = new DOMSource(doc);
-                    StreamResult result = new StreamResult(file);
-                    //StreamResult result = new StreamResult(System.out);
-
-                    transformer.transform(source, result);
+                    root = root.getParentFile();
                 }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
+
+                if (file == null || !file.exists())
+                    throw new RuntimeException("Intellij workspace file could not be found! are you sure you imported the project into intellij?");
+
+                DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+                Document doc = docBuilder.parse(file);
+
+                injectIntellijRuns(doc, module);
+
+                // write the content into xml file
+                TransformerFactory transformerFactory = TransformerFactory.newInstance();
+                Transformer transformer = transformerFactory.newTransformer();
+                transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+                transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+                transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+                transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+                DOMSource source = new DOMSource(doc);
+                StreamResult result = new StreamResult(file);
+                //StreamResult result = new StreamResult(System.out);
+
+                transformer.transform(source, result);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
             }
         });
         task.setGroup(GROUP_FG);
@@ -1237,22 +1156,15 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
         if (ideaConv.getWorkspace().getIws() == null)
             return;
 
-        ideaConv.getWorkspace().getIws().withXml(new Closure<Object>(UserBasePlugin.class)
-        {
-            public Object call(Object... obj)
+        ideaConv.getWorkspace().getIws().withXml(root -> {
+            Document doc = root.asElement().getOwnerDocument();
+            try
             {
-                Element root = ((XmlProvider) this.getDelegate()).asElement();
-                Document doc = root.getOwnerDocument();
-                try
-                {
-                    injectIntellijRuns(doc, project.getProjectDir().getCanonicalPath());
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-
-                return null;
+                injectIntellijRuns(doc, project.getProjectDir().getCanonicalPath());
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
             }
         });
     }
@@ -1329,4 +1241,6 @@ public abstract class UserBasePlugin<T extends UserBaseExtension> extends BasePl
         if (!f.exists())
             f.mkdirs();
     }
+
+    private void makeRunDir(Task task) {delayedFile(REPLACE_RUN_DIR).call().mkdirs();}
 }

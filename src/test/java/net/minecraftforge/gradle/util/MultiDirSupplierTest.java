@@ -42,7 +42,7 @@ import com.google.common.io.Files;
 
 public class MultiDirSupplierTest
 {
-    private final List<File> dirs = new LinkedList<File>();
+    private final List<File> dirs = new LinkedList<>();
     private final Multimap<File, String> expectedFiles = HashMultimap.create();
     private final Random rand = new Random();
     private static final String END = ".tmp";
@@ -135,7 +135,7 @@ public class MultiDirSupplierTest
     public void testIOStreams() throws IOException
     {
         // to keep track of changes to check later.
-        HashMap<String, byte[]> dataMap = new HashMap<String, byte[]>(expectedFiles.size());
+        HashMap<String, byte[]> dataMap = new HashMap<>(expectedFiles.size());
         
         // its both an input and output supplier.
         MultiDirSupplier supp = new MultiDirSupplier(dirs);

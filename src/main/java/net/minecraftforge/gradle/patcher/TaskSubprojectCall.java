@@ -92,7 +92,7 @@ class TaskSubprojectCall extends DefaultTask
                 .connect();
         
         //get args
-        ArrayList<String> args = new ArrayList<String>(5);
+        ArrayList<String> args = new ArrayList<>(5);
         args.addAll(Splitter.on(' ').splitToList(getCallLine()));
 
         for (File f : initscripts)
